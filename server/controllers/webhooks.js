@@ -1,29 +1,30 @@
 import { Webhook } from "svix";
 import User from "../models/User.js";
 
+//API CPntroller function to Manage Clerk User with Database
+
 export const clerkWebHooks = async (req, res) => {
     try {
-        const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
+        const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET)
 
-        const payload = req.body; // raw Buffer
-        const headers = {
+        await whook.verify(JSON.stringify(req.body),{
             "svix-id": req.headers["svix-id"],
             "svix-timestamp": req.headers["svix-timestamp"],
             "svix-signature": req.headers["svix-signature"]
-        };
+        })
 
-        const evt = whook.verify(payload, headers); // throws if invalid
-        const { data, type } = evt;
+        const {data, type} = req.body
 
-        switch (type) {
+        switch(type) {
             case 'user.created': {
                 const userData = {
                     _id: data.id,
                     email: data.email_addresses[0].email_address,
                     name: data.name,
                     imageUrl: data.image_url
-                };
-                await User.create(userData);
+                }
+                await User.create(userData)
+                res.json({})
                 break;
             }
 
@@ -32,24 +33,23 @@ export const clerkWebHooks = async (req, res) => {
                     email: data.email_addresses[0].email_address,
                     name: data.name,
                     imageUrl: data.image_url
-                };
-                await User.findByIdAndUpdate(data.id, userData);
+                }
+                await User.findByIdAndUpdate(data.id, userData)
+                res.json({})
                 break;
             }
 
             case 'user.deleted': {
-                await User.findByIdAndDelete(data.id);
-                break;
+                await User.findByIdAndDelete(data.id)
+                res.json({})
+                break
             }
 
             default:
                 break;
         }
 
-        res.status(200).json({ success: true });
-
     } catch (error) {
-        console.error("❌ Webhook error:", error.message);
-        res.status(400).json({ success: false, message: error.message });
+        res.json({success: false, message: error.message})
     }
-};
+}
