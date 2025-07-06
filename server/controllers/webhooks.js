@@ -23,7 +23,9 @@ export const clerkWebHooks = async (req, res) => {
                     name: data.name,
                     imageUrl: data.image_url
                 }
-                await User.create(userData)
+                // await User.create(userData)
+                let newuser = new User(userData)
+                await newuser.save()
                 res.json({})
                 break;
             }
